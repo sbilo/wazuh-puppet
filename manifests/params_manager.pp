@@ -467,7 +467,7 @@ class wazuh::params_manager {
               $wodle_openscap_content = undef
             }
         default: {
-          fail("Module ${module_name} is not supported on ${::operatingsystem}")
+          fail("Module ${module_name} is not supported on ${facts['os']['name']}")
         }
           }
 

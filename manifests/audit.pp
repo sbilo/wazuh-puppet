@@ -45,7 +45,7 @@ class wazuh::audit (
       }
     }
     default: {
-      fail("Module Audit not supported on ${::operatingsystem}")
+      fail("Module Audit not supported on ${facts['os']['name']}")
     }
   }
 }
