@@ -5,7 +5,7 @@ class wazuh::repo (
 
   case $facts['os']['family'] {
     'Debian' : {
-      if $facts['os']['codename'] =~ /(jessie|wheezy|stretch|precise|trusty|vivid|wily|xenial|yakketi|groovy)/
+      if $facts['os']['distro']['codename'] =~ /(jessie|wheezy|stretch|precise|trusty|vivid|wily|xenial|yakketi|groovy)/
       and ! defined(Package['apt-transport-https']) {
         ensure_packages(['apt-transport-https'], {'ensure' => 'present'})
       }
@@ -15,7 +15,7 @@ class wazuh::repo (
         source => 'https://packages.wazuh.com/key/GPG-KEY-WAZUH',
         server => 'pgp.mit.edu'
       }
-      case $facts['os']['codename'] {
+      case $facts['os']['distro']['codename'] {
         /(jessie|wheezy|stretch|buster|bullseye|bookworm|sid|precise|trusty|vivid|wily|xenial|yakketi|bionic|focal|groovy|jammy)/: {
 
           apt::source { 'wazuh':

@@ -435,7 +435,7 @@ class wazuh::params_manager {
             { 'location' => '/var/log/auth.log', 'log_format' => 'syslog' },
             {  'location' => '/var/ossec/logs/active-responses.log', 'log_format' => 'syslog'},
           ]
-          case $facts['os']['codename'] {
+          case $facts['os']['distro']['codename'] {
             'xenial': {
               $server_service = 'wazuh-manager'
               $server_package = 'wazuh-manager'
