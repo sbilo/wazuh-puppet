@@ -272,11 +272,11 @@ class wazuh::agent (
   }
 
   # Package installation
-  case $::kernel {
+  case $facts['kernel'] {
     'Linux': {
       if $manage_repo {
         class { 'wazuh::repo': }
-        if $::osfamily == 'Debian' {
+        if $facts['os']['family'] == 'Debian' {
           Class['wazuh::repo'] -> Class['apt::update'] -> Package[$agent_package_name]
         } else {
           Class['wazuh::repo'] -> Package[$agent_package_name]
@@ -314,28 +314,20 @@ class wazuh::agent (
     default: { fail('OS not supported') }
   }
 
-  case $::kernel {
+  case $facts['kernel'] {
   'Linux': {
     ## ossec.conf generation concats
-    case $::operatingsystem {
-      'RedHat', 'OracleLinux', 'Suse':{
+    case $facts['os']['name'] {
+      'RedHat', 'OracleLinux', 'Suse': {
         $apply_template_os = 'rhel'
-        if ( $::operatingsystemrelease =~ /^9.*/ ){
-          $rhel_version = '9'
-        }elsif ( $::operatingsystemrelease =~ /^8.*/ ){
-          $rhel_version = '8'
-        }elsif ( $::operatingsystemrelease =~ /^7.*/ ){
-          $rhel_version = '7'
-        }elsif ( $::operatingsystemrelease =~ /^6.*/ ){
-          $rhel_version = '6'
-        }elsif ( $::operatingsystemrelease =~ /^5.*/ ){
-          $rhel_version = '5'
+        if ( versioncmp($facts['os']['release']['major'], 5) >= 0 and versioncmp($facts['os']['release']['major'], 9) <= 0){
+          $rhel_version = $facts['os']['release']['major']
         }else{
           fail('This ossec module has not been tested on your distribution')
         }
       }'Debian', 'debian', 'Ubuntu', 'ubuntu':{
         $apply_template_os = 'debian'
-        if ( $::lsbdistcodename == 'wheezy') or ($::lsbdistcodename == 'jessie'){
+        if ( $facts['os']['codename'] == 'wheezy') or ($facts['os']['codename'] == 'jessie'){
           $debian_additional_templates = 'yes'
         }
       }'Amazon':{
@@ -516,9 +508,9 @@ class wazuh::agent (
       $agent_auth_option_address = ''
     }
 
-    case $::kernel {
+    case $facts['kernel'] {
       'Linux': {
-        file { $::wazuh::params_agent::keys_file:
+        file { $wazuh::params_agent::keys_file:
           owner => $wazuh::params_agent::keys_owner,
           group => $wazuh::params_agent::keys_group,
           mode  => $wazuh::params_agent::keys_mode,
@@ -607,7 +599,7 @@ class wazuh::agent (
         exec { 'agent-auth-windows':
           command  => $agent_auth_command,
           provider => 'powershell',
-          onlyif   => "if ((Get-Item '${$::wazuh::params_agent::keys_file}').length -gt 0kb) {exit 1}",
+          onlyif   => "if ((Get-Item '${$wazuh::params_agent::keys_file}').length -gt 0kb) {exit 1}",
           require  => Concat['agent_ossec.conf'],
           before   => Service[$agent_service_name],
           notify   => Service[$agent_service_name],
@@ -637,7 +629,7 @@ class wazuh::agent (
 
   # SELinux
   # Requires selinux module specified in metadata.json
-  if ($::osfamily == 'RedHat' and $selinux == true) {
+  if ($facts['os']['family'] == 'RedHat' and $facts['os']['selinux']['enabled'] == true) {
     selinux::module { 'ossec-logrotate':
       ensure    => 'present',
       source_te => 'puppet:///modules/wazuh/ossec-logrotate.te',

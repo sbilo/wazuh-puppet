@@ -8,10 +8,10 @@ class wazuh::audit (
   $audit_package_title = 'Installing Audit..',
 ) {
 
-  case $::kernel {
+  case $facts['kernel'] {
     'Linux': {
-      case $::operatingsystem {
-        'Debian', 'debian', 'Ubuntu', 'ubuntu': {
+      case $facts['os']['family'] {
+        'Debian': {
           package { $audit_package_title:
             name => 'auditd',
           }

@@ -5,7 +5,7 @@ class wazuh::manager (
     # Installation
 
       $server_package_version           = $wazuh::params_manager::server_package_version,
-      $manage_repos                     = $::wazuh::params_manager::manage_repos,
+      $manage_repos                     = $wazuh::params_manager::manage_repos,
       $manage_firewall                  = $wazuh::params_manager::manage_firewall,
 
 
@@ -290,7 +290,7 @@ class wazuh::manager (
       $wazuh_manager_server_crt             = $wazuh::params_manager::wazuh_manager_server_crt,
       $wazuh_manager_server_key             = $wazuh::params_manager::wazuh_manager_server_key,
 
-      $ossec_local_files                    = $::wazuh::params_manager::default_local_files,
+      $ossec_local_files                    = $wazuh::params_manager::default_local_files,
 
       # API
 
@@ -316,24 +316,24 @@ class wazuh::manager (
       $wazuh_api_cors_expose_headers            = $wazuh::params_manager::wazuh_api_cors_expose_headers,
 
 
-      $wazuh_api_cors_allow_credentials         = $::wazuh::params_manager::wazuh_api_cors_allow_credentials,
-      $wazuh_api_cache_enabled                  = $::wazuh::params_manager::wazuh_api_cache_enabled,
+      $wazuh_api_cors_allow_credentials         = $wazuh::params_manager::wazuh_api_cors_allow_credentials,
+      $wazuh_api_cache_enabled                  = $wazuh::params_manager::wazuh_api_cache_enabled,
 
-      $wazuh_api_cache_time                     = $::wazuh::params_manager::wazuh_api_cache_time,
+      $wazuh_api_cache_time                     = $wazuh::params_manager::wazuh_api_cache_time,
 
-      $wazuh_api_access_max_login_attempts      = $::wazuh::params_manager::wazuh_api_access_max_login_attempts,
-      $wazuh_api_access_block_time              = $::wazuh::params_manager::wazuh_api_access_block_time,
-      $wazuh_api_access_max_request_per_minute  = $::wazuh::params_manager::wazuh_api_access_max_request_per_minute,
-      $wazuh_api_drop_privileges                = $::wazuh::params_manager::wazuh_api_drop_privileges,
-      $wazuh_api_experimental_features          = $::wazuh::params_manager::wazuh_api_experimental_features,
+      $wazuh_api_access_max_login_attempts      = $wazuh::params_manager::wazuh_api_access_max_login_attempts,
+      $wazuh_api_access_block_time              = $wazuh::params_manager::wazuh_api_access_block_time,
+      $wazuh_api_access_max_request_per_minute  = $wazuh::params_manager::wazuh_api_access_max_request_per_minute,
+      $wazuh_api_drop_privileges                = $wazuh::params_manager::wazuh_api_drop_privileges,
+      $wazuh_api_experimental_features          = $wazuh::params_manager::wazuh_api_experimental_features,
 
-      $remote_commands_localfile                = $::wazuh::params_manager::remote_commands_localfile,
-      $remote_commands_localfile_exceptions     = $::wazuh::params_manager::remote_commands_localfile_exceptions,
-      $remote_commands_wodle                    = $::wazuh::params_manager::remote_commands_wodle,
-      $remote_commands_wodle_exceptions         = $::wazuh::params_manager::remote_commands_wodle_exceptions,
-      $limits_eps                               = $::wazuh::params_manager::limits_eps,
+      $remote_commands_localfile                = $wazuh::params_manager::remote_commands_localfile,
+      $remote_commands_localfile_exceptions     = $wazuh::params_manager::remote_commands_localfile_exceptions,
+      $remote_commands_wodle                    = $wazuh::params_manager::remote_commands_wodle,
+      $remote_commands_wodle_exceptions         = $wazuh::params_manager::remote_commands_wodle_exceptions,
+      $limits_eps                               = $wazuh::params_manager::limits_eps,
 
-      $wazuh_api_template                       = $::wazuh::params_manager::wazuh_api_template,
+      $wazuh_api_template                       = $wazuh::params_manager::wazuh_api_template,
 
 
 
@@ -348,12 +348,12 @@ class wazuh::manager (
 
   ## Determine which kernel and family puppet is running on. Will be used on _localfile, _rootcheck, _syscheck & _sca
 
-  if ($::kernel == 'windows') {
+  if ($facts['kernel'] == 'windows') {
     $kernel = 'Linux'
 
   }else{
     $kernel = 'Linux'
-    if ($::osfamily == 'Debian'){
+    if ($facts['os']['family'] == 'Debian'){
       $os_family = 'debian'
     }else{
       $os_family = 'centos'
@@ -362,8 +362,8 @@ class wazuh::manager (
 
 
   if ( $ossec_syscheck_whodata_directories_1 == 'yes' ) or ( $ossec_syscheck_whodata_directories_2 == 'yes' ) {
-    case $::operatingsystem {
-      'Debian', 'debian', 'Ubuntu', 'ubuntu': {
+    case $facts['os']['family'] {
+      'Debian': {
         package { 'Installing Auditd...':
           name => 'auditd',
         }
@@ -392,7 +392,7 @@ class wazuh::manager (
     validate_legacy(Array, 'validate_array', $ossec_emailto)
   }
 
-  if $::osfamily == 'windows' {
+  if $facts['os']['family'] == 'windows' {
     fail('The ossec module does not yet support installing the OSSEC HIDS server on Windows')
   }
 
@@ -401,7 +401,7 @@ class wazuh::manager (
   if $manage_repos {
     # TODO: Allow filtering of EPEL requirement
     class { 'wazuh::repo':}
-    if $::osfamily == 'Debian' {
+    if $facts['os']['family'] == 'Debian' {
       Class['wazuh::repo'] -> Class['apt::update'] -> Package[$wazuh::params_manager::server_package]
     } else {
       Class['wazuh::repo'] -> Package[$wazuh::params_manager::server_package]
@@ -442,25 +442,17 @@ class wazuh::manager (
 
   ## Declaring variables for localfile and wodles generation
 
-  case $::operatingsystem{
+  case $facts['os']['name'] {
     'RedHat', 'OracleLinux':{
       $apply_template_os = 'rhel'
-      if ( $::operatingsystemrelease =~ /^9.*/ ){
-        $rhel_version = '9'
-      }elsif ( $::operatingsystemrelease =~ /^8.*/ ){
-        $rhel_version = '8'
-      }elsif ( $::operatingsystemrelease =~ /^7.*/ ){
-        $rhel_version = '7'
-      }elsif ( $::operatingsystemrelease =~ /^6.*/ ){
-        $rhel_version = '6'
-      }elsif ( $::operatingsystemrelease =~ /^5.*/ ){
-        $rhel_version = '5'
+      if ( versioncmp($facts['os']['release']['major'], 5) >= 0 and versioncmp($facts['os']['release']['major'], 9) <= 0){
+        $rhel_version = $facts['os']['release']['major']
       }else{
         fail('This ossec module has not been tested on your distribution')
       }
     }'Debian', 'debian', 'Ubuntu', 'ubuntu':{
       $apply_template_os = 'debian'
-      if ( $::lsbdistcodename == 'wheezy') or ($::lsbdistcodename == 'jessie'){
+      if ( $facts['os']['codename'] == 'wheezy') or ($facts['os']['codename'] == 'jessie'){
         $debian_additional_templates = 'yes'
       }
     }'Amazon':{
